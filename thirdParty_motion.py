@@ -2,6 +2,8 @@ import struct
 
 class Packet():
 	
+	# Generic packet information, each module contains this data, which
+	# is used to help determine how to proceed with data extraction
 	def __init__(self, data, intSig, fltSig):
 		self.pkType = data[0]
 		self.intSig = intSig
@@ -14,6 +16,7 @@ class Trackable(Packet):
 
 		super().__init__(data, intSig, fltSig)
 
+		# Big Endian
 		if (hex(self.intSig) == "0x4154"):
 			(self.size, self.nameLen) = struct.unpack("!HB", self.data[0:3])
 
@@ -29,6 +32,8 @@ class Trackable(Packet):
 			for i in range(self.nameLen):
 				self.name = self.name + (temp[i].decode("utf-8"))
 
+			# The rest of this module depends on the size of the name, so we need to take this
+			# into consideration when we extract data from the rest of the packet
 			if (self.pkType == 1):
 				(self.numMods) = struct.unpack("!B", self.data[self.nameLen+3:self.nameLen+4])[0]
 				self.data = self.data[self.nameLen+4:]
@@ -36,6 +41,7 @@ class Trackable(Packet):
 				(self.timeStamp) = struct.unpack("!I", self.data[self.nameLen+3:self.nameLen+7])[0]
 				(self.numMods) = struct.unpack("!B", self.data[self.nameLen+7:self.nameLen+8])[0]
 				self.data = self.data[self.nameLen+8:]
+		# Little Endian
 		elif (hex(self.intSig) == "0x5441"):
 			(self.size, self.nameLen) = struct.unpack("HB", self.data[0:3])
 
@@ -51,6 +57,8 @@ class Trackable(Packet):
 			for i in range(self.nameLen):
 				self.name = self.name + (temp[i].decode("utf-8"))
 
+			# The rest of this module depends on the size of the name, so we need to take this
+			# into consideration when we extract data from the rest of the packet
 			if (self.pkType == 1):
 				(self.numMods) = struct.unpack("B", self.data[self.nameLen+3:self.nameLen+4])[0]
 				self.data = self.data[self.nameLen+4:]

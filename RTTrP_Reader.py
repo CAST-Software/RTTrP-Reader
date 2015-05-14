@@ -4,12 +4,21 @@ import struct
 import thirdParty_lighting
 import traceback
 
+# Main class for the packet header, to keep things simply we just leave this as a generic class
+# we won't derive sub-classes from here.
 class RTTrP:
 
 	def __init__(self, data):
+			# Unpack the signature fields from the packet, followed by the packet version, these are ALWAYS
+			# in network (Big Endian) order.
 			(self.intHeader, self.fltHeader) = struct.unpack("!H H", data[0:4])
 			(self.version) = struct.unpack("!H", data[4:6])[0] 
 			
+			# Determine Endianness. In general all x86-64 machines are Little Endian, this gets confusing because
+			# Tracking Adapter can send in Big/Little Endian format. This means if values are sent as Big Endian from
+			# Tracking Adapter, they are still represented in Little Endian by the OS, so we need to instruct
+			# "unpack" to treat the values as Big Endian. For Little Endian, we just read values straight from the
+			# packet without worrying about byte order.
 			if (hex(self.intHeader) == "0x4154"):
 				(self.pID, self.pForm, self.pktSize, self.context, self.numMods) = struct.unpack("!IBHIB", data[6:18])
 			elif (hex(self.intHeader) == "0x5441"):
@@ -33,6 +42,14 @@ class RTTrP:
 class RTTrPM():
 
 	def __init__(self, header):
+		""" 	Header:	RTTrP header, with data attached 
+				
+				Description:
+
+				This function initializes the RTTrPM packet, with the header values from
+				the RTTrP module passed in. All other values are extracted byte by byte.
+		"""
+				
 		self.rttrp_head = header
 		self.data = header.data
 		self.trackable = None #0x01
@@ -73,9 +90,23 @@ class RTTrPL():
 		self.data = header.data
 
 def openConnection(IP, PORT, isReading, outModules):
+	"""
+		IP:			The IP to listen on for RTTrPM packets
+		Port:		The Port to listen on for RTTrPM packets from the given IP
+		isReading:	A signal for the thread running this function, when triggered, the connection will close
+		OutModules:	TBD, will be used to update fields in the GUI
+
+		Description:
+					
+					This function is where the packets are read in and split into their
+					various modules. It will determine the type of packet and begin
+					disecting it into its various modules (depending on what is present).
+	"""
+
 	UDP_IP = str(IP)
 	UDP_PORT = int(PORT)
 
+	# Create the socketm then bind it to the (IP, PORT) pair
 	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	sock.bind((UDP_IP, UDP_PORT))
 
@@ -83,22 +114,31 @@ def openConnection(IP, PORT, isReading, outModules):
 	data = 1 
 	addr = 1
 
+	# So long as the signal is set, then we will continue to listen on the given (IP, PORT) socket
 	while isReading.isSet():
+		# Set the size of the buffer to the maximum UDP packet size, and retrieve the data sent
 		data, addr = sock.recvfrom(65535)
 
 		if(data != None and addr != None):
 			
+			# Create the RTTrP header
 			pkt = RTTrP(data)
 
 			try:
+				# If we have an RTTrPM packet, begin to extract the components
 				if (hex(pkt.fltHeader) == "0x4334" or hex(pkt.fltHeader) == "0x3443"):
 					pkt = RTTrPM(pkt)
 
+					# After determining the number of trackables (listed in the RTTrP header) we begin to extract
+					# each trackable from the packet and return it to the GUI
 					for i in range(pkt.rttrp_head.numMods):
 						module = thirdParty_lighting.Trackable(pkt.data, pkt.rttrp_head.intHeader, pkt.rttrp_head.fltHeader)
 
 						pkt.trackable = module
 	
+						# For each trackable, we need to extract each module. Keep in mind when dealing with LED modules, each
+						# individual LED is considered it's own separate module, so we don't need to worry about
+						# modules within modules, except in the case of a Trackable.
 						for i in range(module.numMods):
 							if (module.data[0] == 2):
 								pkt.centroidMod = thirdParty_lighting.CentroidMod(module.data, module.intSig, module.fltSig)
@@ -121,7 +161,7 @@ def openConnection(IP, PORT, isReading, outModules):
 							else:
 								# unknwon packet type, da fuq is this
 								exit()
-				elif (hex(pkt.fltHeader) == "0x4434" or hex(pkt.fltHeader) == "0x3444"):
+				elif (hex(pkt.fltHeader) == "0x4434" or hex(pkt.fltHeader) == "0x3444"): # TODO: Create the RTTrPL code that reads an RTTrPL packet
 					pkt = RTTrPL(pkt)
 					sock.close()
 					exit()
