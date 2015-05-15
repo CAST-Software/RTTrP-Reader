@@ -1,7 +1,7 @@
 import socket
 import binascii
 import struct
-import thirdParty_lighting
+import thirdParty_motion
 import traceback
 
 # Main class for the packet header, to keep things simply we just leave this as a generic class
