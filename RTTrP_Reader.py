@@ -132,7 +132,7 @@ def openConnection(IP, PORT, isReading, outModules):
 					# After determining the number of trackables (listed in the RTTrP header) we begin to extract
 					# each trackable from the packet and return it to the GUI
 					for i in range(pkt.rttrp_head.numMods):
-						module = thirdParty_lighting.Trackable(pkt.data, pkt.rttrp_head.intHeader, pkt.rttrp_head.fltHeader)
+						module = thirdParty_motion.Trackable(pkt.data, pkt.rttrp_head.intHeader, pkt.rttrp_head.fltHeader)
 
 						pkt.trackable = module
 	
@@ -141,22 +141,22 @@ def openConnection(IP, PORT, isReading, outModules):
 						# modules within modules, except in the case of a Trackable.
 						for i in range(module.numMods):
 							if (module.data[0] == 2):
-								pkt.centroidMod = thirdParty_lighting.CentroidMod(module.data, module.intSig, module.fltSig)
+								pkt.centroidMod = thirdParty_motion.CentroidMod(module.data, module.intSig, module.fltSig)
 								module.data = pkt.centroidMod.data
 							elif (module.data[0] == 3):
-								pkt.quatMod = thirdParty_lighting.QuatModule(module.data, module.intSig, module.fltSig)
+								pkt.quatMod = thirdParty_motion.QuatModule(module.data, module.intSig, module.fltSig)
 								module.data = pkt.quatMod.data
 							elif (module.data[0] == 4):
-								pkt.eulerMod = thirdParty_lighting.EulerModule(module.data, module.intSig, module.fltSig)
+								pkt.eulerMod = thirdParty_motion.EulerModule(module.data, module.intSig, module.fltSig)
 								module.data = pkt.eulerMod.data
 							elif (module.data[0] == 6):
-								pkt.ledMod.append(thirdParty_lighting.LEDModule(module.data, module.intSig, module.fltSig))
+								pkt.ledMod.append(thirdParty_motion.LEDModule(module.data, module.intSig, module.fltSig))
 								module.data = pkt.ledMod[len(pkt.ledMod)-1].data
 							elif (module.data[0] == 32):
-								pkt.centroidAccVelMod = thirdParty_lighting.CentroidAccVelMod(module.data, module.intSig, module.fltSig)
+								pkt.centroidAccVelMod = thirdParty_motion.CentroidAccVelMod(module.data, module.intSig, module.fltSig)
 								module.data = pkt.centroidAccVelMod.data
 							elif (module.data[0] == 33):
-								pkt.LEDAccVelMod.append(thirdParty_lighting.LEDAccVelMod(module.data, module.intSig, module.fltSig))
+								pkt.LEDAccVelMod.append(thirdParty_motion.LEDAccVelMod(module.data, module.intSig, module.fltSig))
 								module.data = pkt.LEDAccVelMod[len(pkt.LEDAccVelMod)-1].data
 							else:
 								# unknwon packet type, da fuq is this
