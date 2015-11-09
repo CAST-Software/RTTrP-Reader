@@ -1,4 +1,10 @@
 import struct
+import RTTrP
+
+class RTTrPL():
+	def __init__(self, header):
+		self.rttrp_head = header
+		self.data = header.data
 
 class Packet():
 	

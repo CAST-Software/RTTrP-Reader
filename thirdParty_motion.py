@@ -1,4 +1,50 @@
 import struct
+import RTTrP
+
+class RTTrPM():
+
+	def __init__(self, header):
+		""" 	Header:	RTTrP header, with data attached 
+				
+				Description:
+
+				This function initializes the RTTrPM packet, with the header values from
+				the RTTrP module passed in. All other values are extracted byte by byte.
+		"""
+				
+		self.rttrp_head = header
+		self.data = header.data
+		self.trackable = None #0x01
+		self.centroidMod = None #0x02
+		self.quatMod = None #0x03
+		self.eulerMod = None #0x04
+		self.ledMod = [] #0x06
+		self.centroidAccVelMod = None #0x20
+		self.LEDAccVelMod = [] #0x21
+
+	def printPacket(self):
+		self.rttrp_head.printHeader()
+		self.trackable.printModule()
+
+		if self.centroidMod:
+			self.centroidMod.printModule()
+
+		if self.ledMod:
+			for LED in self.ledMod:
+				LED.printModule()
+
+		if self.quatMod:
+			self.quatMod.printModule()
+
+		if self.eulerMod:
+			self.eulerMod.printModule()
+
+		if self.centroidAccVelMod:
+			self.centroidAccVelMod.printModule()
+
+		if self.LEDAccVelMod:
+			for LED in self.LEDAccVelMod:
+				LED.printModule()
 
 class Packet():
 	
